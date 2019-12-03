@@ -17,7 +17,7 @@ namespace Day3
             var intersectionCoords = wire1.Keys.Intersect(wire2.Keys);
 
             var closestDistance = intersectionCoords.Min(c => wire1[c] + wire2[c]);
-            Console.WriteLine(closestDistance + 2);  //Don't know why this is needed, but adding 2 solved both the examples and the final solution for me.
+            Console.WriteLine(closestDistance); 
         }
     }
 
@@ -68,13 +68,14 @@ namespace Day3
                     //    Add(coord, steps);
                     //}
 
+                    steps++;
+
                     //This works, but doesn't feel like signals travel like this.
                     if (!ContainsKey(coord))
                     {
                         Add(coord, steps);   
                     }
 
-                    steps++;
 
                 }
             }
