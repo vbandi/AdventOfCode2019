@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Day4
 {
@@ -13,6 +14,7 @@ namespace Day4
             Part1BruteForce();
             Part2BruteForce();
             Part2GroupBy();
+            ParallelFor();
         }
 
         private static void Part1BruteForce()
@@ -103,6 +105,40 @@ namespace Day4
             Console.WriteLine($"Result: {count}. It took {sw.ElapsedMilliseconds} ms.");
         }
 
+        private static object lck = new object();
 
+        private static void ParallelFor()
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            var count = 0;
+            Parallel.For(183564, 657475, new ParallelOptions {MaxDegreeOfParallelism = 16 }, (i) =>
+            {
+                var s = i.ToString(CultureInfo.InvariantCulture);
+
+                //verify double digits
+                var continuousSimilarDigits = 1;
+                bool has2ContinuousDigits = false;
+                for (int j = 1; j < 6; j++)
+                {
+                    if (s[j] == s[j - 1])
+                        continuousSimilarDigits++;
+                    else
+                    {
+                        if (continuousSimilarDigits == 2)
+                            has2ContinuousDigits = true;
+
+                        continuousSimilarDigits = 1;
+                    }
+                }
+
+                if (s[0] <= s[1] && s[1] <= s[2] && s[2] <= s[3] && s[3] <= s[4] && s[4] <= s[5])
+                    if (has2ContinuousDigits || continuousSimilarDigits == 2)
+                        lock (lck)
+                            count++;
+
+            });
+            Console.WriteLine($"Result: {count}. It took {sw.ElapsedMilliseconds} ms.");
+
+        }
     }
 }
