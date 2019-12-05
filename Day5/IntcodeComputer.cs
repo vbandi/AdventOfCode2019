@@ -2,21 +2,22 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using Microsoft.VisualStudio.TestPlatform.Utilities;
 
 namespace Day5
 {
-    public class IntcodeComputer
+    public static class IntCodeComputer
     {
         public const int HCF = 99;
         public const int ADD = 1;
         public const int MUL = 2;
         public const int INP = 3;
         public const int OUT = 4;
+        public const int JNZ = 5;
+        public const int JZ = 6;
+        public const int LT = 7;
+        public const int EQ = 8;
 
-        public static (int[] memory, List<int> output) Execute(string text, int[] inputs = null)
+        public static (int[] memory, List<int> output) Execute(string text, IEnumerable<int> inputs = null)
         {
             var memory = ParseInput(text);
             var output = Execute(memory, inputs);
@@ -34,8 +35,8 @@ namespace Day5
 
         private static List<int> Execute(int[] memory, IEnumerable<int> inputs)
         {
-            List<int> output = new List<int>();
-            int instructionPointer = 0;
+            var output = new List<int>();
+            var instructionPointer = 0;
 
             IEnumerator<int> inputEnumerator = null;
 
@@ -51,18 +52,12 @@ namespace Day5
                 switch (opCode)
                 {
                     case ADD:
-                        memory[memory[instructionPointer + 3]] =
-                            GetValue(memory[instructionPointer + 1], parameterModes[0]) +
-                            GetValue(memory[instructionPointer + 2], parameterModes[1]);
-
+                        memory[memory[instructionPointer + 3]] = GetParameterValue(0) + GetParameterValue(1);
                         instructionPointer += 4;
                         break;
                     
                     case MUL:
-                        memory[memory[instructionPointer + 3]] =
-                            GetValue(memory[instructionPointer + 1], parameterModes[0]) *
-                            GetValue(memory[instructionPointer + 2], parameterModes[1]);
-
+                        memory[memory[instructionPointer + 3]] = GetParameterValue(0) * GetParameterValue(1);
                         instructionPointer += 4;
                         break;
                     
@@ -75,17 +70,40 @@ namespace Day5
                             throw new InvalidOperationException("Encountered INP while inputs has ran out of data");
 
                         memory[memory[instructionPointer + 1]] = inputEnumerator.Current;
-
                         instructionPointer += 2;
                         break;
 
                     case OUT:
-                        output.Add(GetValue(memory[instructionPointer + 1], parameterModes[0]));
+                        output.Add(GetParameterValue(0));
                         instructionPointer += 2;
                         break;
 
+                    case JNZ:
+                        instructionPointer = GetParameterValue(0) != 0 ? GetParameterValue(1) : instructionPointer + 3;
+                        break;
+
+                    case JZ:
+                        instructionPointer = GetParameterValue(0) == 0 ? GetParameterValue(1) : instructionPointer + 3;
+                        break;
+
+                    case LT:
+                        memory[memory[instructionPointer + 3]] = GetParameterValue(0) < GetParameterValue(1) ? 1 : 0;
+                        instructionPointer += 4;
+                        break;
+                    
+                    case EQ:
+                        memory[memory[instructionPointer + 3]] = GetParameterValue(0) == GetParameterValue(1) ? 1 : 0;
+                        instructionPointer += 4;
+                        break;
 
                     default: throw new InvalidOperationException($"Invalid instruction at {instructionPointer} : {memory[instructionPointer]}");
+
+                        // returns parameter value in both immediate and position mode
+                    int GetParameterValue(int parameterIndex)
+                    {
+                        int parameter = memory[instructionPointer + parameterIndex + 1];
+                        return parameterModes[parameterIndex] == ParameterModes.Immediate ? parameter : memory[parameter];
+                    }
                 }
 
                 if (memory.Length < instructionPointer + 1)
@@ -93,18 +111,11 @@ namespace Day5
             }
 
             return output;
-
-            int GetValue(int parameter, ParameterModes parameterMode)
-            {
-                return parameterMode == ParameterModes.Immediate ? parameter : memory[parameter];
-            }
         }
-
-
 
         public static (int opCode, ParameterModes[] parameterModes) CalculateOpCodeAndParameterModes(int i)
         {
-            //always 3 parameter modes for now
+            // HACK: always 3 parameter modes for now
             var s = i.ToString("D5", CultureInfo.InvariantCulture);
             
             var opCode = int.Parse(s.Substring(3));
