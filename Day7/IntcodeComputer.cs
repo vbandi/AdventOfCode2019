@@ -24,12 +24,15 @@ namespace Day7
 
         public BufferBlock<int> input { get; } = new BufferBlock<int>();
         public BufferBlock<int> output{ get; } = new BufferBlock<int>();
+        public List<int> OutputList { get; } = new List<int>();
 
-        public async Task<int[]> ExecuteAsync(string text)
+        public string Name { get; set; }
+
+        public async Task<(int[] memory, List<int> output)> ExecuteAsync(string text)
         {
             memory = ParseInput(text);
             await ExecuteAsync();
-            return memory;
+            return (memory, OutputList);
         }
 
         private static int[] ParseInput(string text)
@@ -69,7 +72,9 @@ namespace Day7
                         break;
 
                     case OUT:
-                        output.Post(GetParameterValue(0));
+                        var o = GetParameterValue(0);
+                        output.Post(o);
+                        OutputList.Add(o);
                         instructionPointer += 2;
                         break;
 

@@ -10,49 +10,70 @@ namespace Day7
 {
     public static class Amplifiers
     {
+        /// <summary>
+        /// Executes the specified program as pert Part1
+        /// </summary>
         public static async Task<int> ExecuteAsync(string program)
         {
             IEnumerable<IEnumerable<int>> permutations = GetPermutations(new [] {0, 1, 2, 3, 4}, 5);
+            int max = int.MinValue;
 
+            foreach (var permutation in permutations)
+            {
+                var z = await ExecutePermutationWithBuffersAsync(program, permutation.ToArray());
 
-            //Part 1 solution
-            //return permutations.Select(p => ExecutePermutation(program, p)).Max();
+                if (z > max)
+                    max = z;
+            }
 
-            //Part 1 solution with input-output buffers
-            return await permutations.Select(async p => await ExecutePermutationWithBuffersAsync(program, p.ToArray())).Max();
+            return max;
+        }
+
+        /// <summary>Executes the specified
+        /// program as per Part2</summary>
+        /// <param name="program">The program.</param>
+        public static int ExecuteWithFeedback(string program)
+        {
+            IEnumerable<IEnumerable<int>> permutations = GetPermutations(new[] { 5, 6, 7, 8, 9 }, 5);
+            return permutations.Select(p => ExecutePermutationWithFeedback(program, p.ToArray())).Max();
         }
 
         private static async Task<int> ExecutePermutationWithBuffersAsync(string program, int[] phaseSettings)
         {
-            var outputObserver = new IntObserver();
             var computers = CreateAndLinkComputers();
-            computers.Last().output.AsObservable().Subscribe(outputObserver);
+            var tasks = new List<Task>();
 
             for (int i = 0; i < computers.Length; i++)
             {
                 computers[i].input.Post(phaseSettings[i]);
-                await computers[i].ExecuteAsync(program);
+                tasks.Add(computers[i].ExecuteAsync(program));
             }
 
-            return outputObserver.LastValue;
+            computers.First().input.Post(0);
+
+            Task.WaitAll(tasks.ToArray());
+
+            return computers.Last().OutputList.Last(); //last computer's output
         }
 
-        class IntObserver : IObserver<int>
+        private static int ExecutePermutationWithFeedback(string program, int[] phaseSettings)
         {
-            public int LastValue { get; private set; } = int.MinValue;
-            public void OnNext(int value)
+            var computers = CreateAndLinkComputers();
+            computers.Last().output.LinkTo(computers.First().input);  //the feedback
+
+            var tasks = new List<Task>();
+
+            for (int i = 0; i < computers.Length; i++)
             {
-                LastValue = value;
+                computers[i].input.Post(phaseSettings[i]);
+                tasks.Add(computers[i].ExecuteAsync(program));
             }
 
-            public void OnError(Exception error)
-            {
-                throw new NotImplementedException();
-            }
+            computers.First().input.Post(0);
+            
+            Task.WaitAll(tasks.ToArray());
 
-            public void OnCompleted()
-            {
-            }
+            return computers.Last().OutputList.Last(); //last computer's output
         }
 
         private static IntCodeComputer[] CreateAndLinkComputers()
@@ -62,31 +83,13 @@ namespace Day7
             for (int i = 0; i < computers.Length; i++)
             {
                 computers[i] = new IntCodeComputer();
+                computers[i].Name = $"Comp{i}";
 
-                if (i > 1)
+                if (i > 0)
                     computers[i - 1].output.LinkTo(computers[i].input);
             }
 
             return computers;
-        }
-
-        public static int ExecuteWithFeedback(string program)
-        {
-            IEnumerable<IEnumerable<int>> permutations = GetPermutations(new[] { 5, 6, 7, 8, 9 }, 5);
-            return permutations.Select(p => ExecutePermutationWithFeedback(program, p)).Max();
-        }
-
-        //private static async Task<int> ExecutePermutation(string program, IEnumerable<int> phaseSettings)
-        //{
-
-
-        //    return phaseSettings.Aggregate(0, async (current, phaseSetting) => 
-        //        (await computer.ExecuteAsync(program)).output.First());
-        //}
-
-        private static int ExecutePermutationWithFeedback(string program, IEnumerable<int> phaseSettings)
-        {
-            throw  new NotImplementedException();
         }
 
         // From https://stackoverflow.com/questions/756055/listing-all-permutations-of-a-string-integer
