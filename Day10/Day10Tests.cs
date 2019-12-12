@@ -43,6 +43,23 @@ namespace Day10
         }
 
         [TestMethod]
+        public void Part2Example1Test()
+        {
+            var map = @"
+.#....#####...#..
+##...##.#####..##
+##...#...#.#####.
+..#.....#...###..
+..#.#.....#....##
+";
+
+            MonitoringStation.DoGiantLaserStuff(map, (8, 3));
+
+
+        }
+
+
+        [TestMethod]
         public void Day10()
         {
             var map = @"
@@ -88,8 +105,7 @@ namespace Day10
 
 
             var station = MonitoringStation.CalculateBestStation(map);
-            Console.WriteLine(station.maxNumberOfVisible);
-
+            Console.WriteLine($"Placing laser at {station.bestAsteroid}, where {station.maxNumberOfVisible} asteroids are visible.");
             Console.WriteLine(MonitoringStation.DoGiantLaserStuff(map, station.bestAsteroid));
         }
 

@@ -47,23 +47,24 @@ namespace Day10
 
         public static (int X, int Y) DoGiantLaserStuff(string map, (int X, int Y) laserCoordinates)
         {
+            int mapWidth = map.IndexOf('\r');
             var asteroids = ProcessMap(map.Trim());
 
             var distancesAndDirections =
                 (from otherAsteroid in asteroids
                 where otherAsteroid != laserCoordinates
-                let deltaX = laserCoordinates.X - otherAsteroid.X
-                let deltaY = laserCoordinates.Y - otherAsteroid.Y
-                let distanceSquared = deltaX ^ 2 + deltaY ^ 2
+                let deltaX = otherAsteroid.X - laserCoordinates.X
+                let deltaY = otherAsteroid.Y - laserCoordinates.Y
+                let distanceSquared = deltaX * deltaX + deltaY * deltaY
                 let direction = Math.Atan2(deltaX, deltaY)
                 select (distanceSquared, direction, otherAsteroid)).ToList();
 
-            var sortedDirections = distancesAndDirections.Select(d => d.direction).Distinct().OrderBy(dir => dir).ToArray();
+            var sortedDirections = distancesAndDirections.Select(d => d.direction).Distinct().OrderByDescending(dir => dir).ToArray();
 
             var directionIndex = 0;
             (int, int) result = (int.MinValue, int.MinValue);
 
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < 200 && distancesAndDirections.Any(); i++)
             {
                 var firingDirection = sortedDirections[directionIndex];
                 var asteroidsTargeted = distancesAndDirections.Where(d => d.direction == firingDirection).OrderBy(d => d.distanceSquared).ToList();
@@ -73,6 +74,10 @@ namespace Day10
                     var destroyedAsteroid = asteroidsTargeted.First();
                     distancesAndDirections.Remove(destroyedAsteroid);
                     result = destroyedAsteroid.otherAsteroid;
+                    Console.WriteLine($"Destroyed asteroid {i+1} at ({result.Item1},{result.Item2}) in direction {firingDirection}");
+
+                    ////just for debug:
+                    //map[destroyedAsteroid.otherAsteroid.X + destroyedAsteroid.otherAsteroid.Y * (mapWidth + 2)] = i.ToString().Last()
                 }
                 else
                 {
@@ -81,7 +86,7 @@ namespace Day10
 
                 directionIndex++;
 
-                if (directionIndex > sortedDirections.Length)
+                if (directionIndex >= sortedDirections.Length)
                     directionIndex = 0;
             }
 
