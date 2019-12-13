@@ -53,5 +53,37 @@ namespace Day12
 
             Console.WriteLine(sim.CalculateTotalEnergy());
         }
+
+        [TestMethod]
+        public void Part2ExampleTests()
+        {
+            var scanData = new BodyState[]
+            {
+                new BodyState(-1, 0, 2),
+                new BodyState(2, -10, -7),
+                new BodyState(4, -8, 8),
+                new BodyState(3, 5, -1),
+            };
+
+            var sim = new Simulation(scanData);
+
+            sim.CalculateFirstRepeatOfHistory().ShouldBe(2772);
+        }
+
+        [TestMethod]
+        public void Part2()
+        {
+            var scanData = new BodyState[]
+            {
+                new BodyState(10, 15, 7),
+                new BodyState(15, 10, 0),
+                new BodyState(20, 12, 3),
+                new BodyState(0, -3, 13),
+            };
+
+            var sim = new Simulation(scanData);
+         
+            Console.WriteLine(sim.CalculateFirstRepeatOfHistory());
+        }
     }
 }
